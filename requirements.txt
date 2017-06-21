@@ -1,3 +1,1 @@
 boto3==1.4.4
-credstash==1.13.2
-docopt==0.6.2
