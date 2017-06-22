@@ -9,12 +9,23 @@ from ecs_update_monitor import (
     run
 )
 from dateutil.tz import tzlocal
+from string import ascii_letters, digits
 from hypothesis import given, assume
 from hypothesis.strategies import fixed_dictionaries, text
 from mock import ANY, MagicMock, Mock, patch
+from p2assertlogs import AssertLogsContext
+
+
+IDENTIFIERS = ascii_letters + digits + '-_'
 
 
 class TestECSMonitor(unittest.TestCase):
+
+    def assertLogs(self, logger=None, level=None):
+        if 'assertLogs' in dir(unittest.TestCase):
+            return unittest.TestCase.assertLogs(self, logger, level)
+        else:
+            return AssertLogsContext(self, logger, level)
 
     def test_ecs_monitor_successful_deployment(self):
         # Given
@@ -109,9 +120,9 @@ class TestECSMonitor(unittest.TestCase):
 class TestECSEventIterator(unittest.TestCase):
 
     @given(fixed_dictionaries({
-        'cluster': text(),
-        'service': text(),
-        'taskdef': text(),
+        'cluster': text(alphabet=IDENTIFIERS),
+        'service': text(alphabet=IDENTIFIERS),
+        'taskdef': text(alphabet=IDENTIFIERS),
     }))
     def test_monitor_exited_when_the_deployment_is_stable(
         self, deployment_data
@@ -432,8 +443,8 @@ class TestECSEventIterator(unittest.TestCase):
         boto_session.client.assert_called_once()
 
     @given(fixed_dictionaries({
-        'deploy_taskdef': text(),
-        'actual_taskdef': text(),
+        'deploy_taskdef': text(alphabet=IDENTIFIERS),
+        'actual_taskdef': text(alphabet=IDENTIFIERS),
     }))
     def test_monitor_taskdef_does_not_match(self, deployment_data):
         cluster = 'dummy-cluster'
@@ -612,9 +623,9 @@ class TestECSEventIterator(unittest.TestCase):
 class TestRunECSMonitor(unittest.TestCase):
 
     @given(fixed_dictionaries({
-        'cluster': text(),
-        'service': text(),
-        'taskdef': text(),
+        'cluster': text(alphabet=IDENTIFIERS),
+        'service': text(alphabet=IDENTIFIERS),
+        'taskdef': text(alphabet=IDENTIFIERS),
     }))
     def test_run(self, fixtures):
         # Given

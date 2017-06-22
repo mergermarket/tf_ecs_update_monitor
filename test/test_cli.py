@@ -1,7 +1,13 @@
 import unittest
 from contextlib import contextmanager
-from io import StringIO
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 import sys
+
 from mock import Mock, patch
 from string import ascii_letters, digits
 from hypothesis import given, assume
@@ -13,19 +19,21 @@ from ecs_update_monitor import cli
 IDENTIFIERS = ascii_letters + digits + '-_'
 
 
+@contextmanager
+def capture_stderr():
+    output = StringIO()
+    save = sys.stderr
+    try:
+        sys.stderr = output
+        yield output
+    finally:
+        sys.stderr = save
+
+
 class TestECSMonitorCLI(unittest.TestCase):
 
     def test_required_parameters(self):
         # Given
-        @contextmanager
-        def capture_stderr():
-            output = StringIO()
-            save = sys.stderr
-            try:
-                sys.stderr = output
-                yield output
-            finally:
-                sys.stderr = save
 
         # When
         with self.assertRaises(SystemExit) as exit, capture_stderr() as errors:
@@ -33,9 +41,17 @@ class TestECSMonitorCLI(unittest.TestCase):
 
         # Then
         assert exit.exception.code != 0
-        assert 'the following arguments are required: {}'.format(
-            '--cluster, --service, --taskdef, --region'
-        ) in errors.getvalue()
+        try:
+            assert 'the following arguments are required: {}'.format(
+                '--cluster, --service, --taskdef, --region'
+            ) in errors.getvalue()
+        except AssertionError:
+            print("python version is {}".format(sys.version_info))
+            if sys.version_info.major == 2:
+                # use a slightly watered down assertion for python 2
+                assert 'argument --cluster is required' in errors.getvalue()
+            else:
+                raise
 
     @given(fixed_dictionaries({
         'cluster': text(min_size=1, alphabet=IDENTIFIERS),
