@@ -7,6 +7,8 @@ if [ "$#" != "5" ]; then
     exit 1
 fi
 
+cd "$1"
+
 python -m ecs_update_monitor --cluster "$2" \
                              --service "$3" \
                              --taskdef "$4" \
