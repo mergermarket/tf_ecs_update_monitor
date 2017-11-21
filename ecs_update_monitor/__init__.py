@@ -3,6 +3,9 @@ from time import sleep, time
 from ecs_update_monitor.logger import logger
 
 
+MAX_FAILURES = 3
+
+
 class UserFacingError(Exception):
     pass
 
@@ -21,6 +24,7 @@ class ECSMonitor:
     def __init__(self, ecs_event_iterator):
         self._ecs_event_iterator = ecs_event_iterator
         self._previous_running_count = 0
+        self._failed_count = 0
 
     def wait(self):
         self._check_ecs_deploy_progress()
@@ -30,6 +34,7 @@ class ECSMonitor:
         for event in self._ecs_event_iterator:
             self._show_deployment_progress(event)
             self._check_for_failed_tasks(event)
+
             if event.done:
                 logger.info('Deployment complete')
                 return True
@@ -54,8 +59,9 @@ class ECSMonitor:
 
     def _check_for_failed_tasks(self, event):
         if event.running < self._previous_running_count:
-            raise FailedTasksError
-
+            self._failed_count += self._previous_running_count - event.running
+            if self._failed_count >= MAX_FAILURES:
+                raise FailedTasksError
         self._previous_running_count = event.running
 
 
@@ -224,4 +230,6 @@ class TimeoutError(UserFacingError):
 
 class FailedTasksError(UserFacingError):
     def __str__(_):
-        return 'Deployment failed - number of running tasks has decreased'
+        return 'Deployment failed - {} new tasks have failed'.format(
+            MAX_FAILURES
+        )

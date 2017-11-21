@@ -90,10 +90,17 @@ class TestECSMonitor(unittest.TestCase):
     def test_ecs_monitor_failed_tasks_error(self):
         # Given
         ecs_event_iterator = [
+            # running, pending, desired, previous
             InProgressEvent(0, 1, 2, 2, []),
             InProgressEvent(1, 1, 2, 2, []),
             InProgressEvent(2, 0, 2, 2, []),
-            InProgressEvent(1, 0, 2, 2, [])
+            InProgressEvent(1, 0, 2, 2, []),
+            InProgressEvent(1, 1, 2, 2, []),
+            InProgressEvent(2, 0, 2, 2, []),
+            InProgressEvent(1, 0, 2, 2, []),
+            InProgressEvent(1, 1, 2, 2, []),
+            InProgressEvent(2, 0, 2, 2, []),
+            InProgressEvent(1, 0, 2, 2, []),
         ]
         ecs_monitor = ECSMonitor(ecs_event_iterator)
         ecs_monitor._INTERVAL = 0
@@ -113,7 +120,19 @@ class TestECSMonitor(unittest.TestCase):
             ('INFO:ecs_update_monitor.logger:ECS service tasks - '
              'desired: 2 pending: 0 running: 2 previous: 2'),
             ('INFO:ecs_update_monitor.logger:ECS service tasks - '
-             'desired: 2 pending: 0 running: 1 previous: 2')
+             'desired: 2 pending: 0 running: 1 previous: 2'),
+            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
+             'desired: 2 pending: 1 running: 1 previous: 2'),
+            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
+             'desired: 2 pending: 0 running: 2 previous: 2'),
+            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
+             'desired: 2 pending: 0 running: 1 previous: 2'),
+            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
+             'desired: 2 pending: 1 running: 1 previous: 2'),
+            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
+             'desired: 2 pending: 0 running: 2 previous: 2'),
+            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
+             'desired: 2 pending: 0 running: 1 previous: 2'),
         ]
 
 
