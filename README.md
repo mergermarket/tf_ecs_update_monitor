@@ -34,7 +34,7 @@ you might use this (e.g. in such a module):
     }
     
     module "ecs_update_monitor" {
-      source = "https://github.com/mergermarket/tf_ecs_update_monitor"
+      source = "github.com/mergermarket/tf_ecs_update_monitor"
 
       cluster = "my-cluster"
       service = "my-service"
