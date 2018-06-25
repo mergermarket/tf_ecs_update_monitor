@@ -3,7 +3,8 @@ from re import match
 
 from boto3 import Session
 
-from ecs_update_monitor import run
+from ecs_update_monitor import run, FailedTasksError
+from ecs_update_monitor.logger import logger
 
 
 def parse_args(argv):
@@ -51,4 +52,7 @@ def main(argv):
     caller = sts.get_caller_identity()
     if caller['Arn'] != args.caller_arn:
         session = switch_role(sts, args.caller_arn, args.region)
-    run(args.cluster, args.service, args.taskdef, session)
+    try:
+        run(args.cluster, args.service, args.taskdef, session)
+    except FailedTasksError as e:
+        logger.error(str(e))
