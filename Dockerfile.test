@@ -1,7 +1,8 @@
-FROM python:PYTHON_VERSION-alpine
+FROM python:3-alpine
 
 RUN mkdir /code
 WORKDIR /code
+ENV PYTHONPATH=/code
 
 RUN apk update
 RUN apk add gcc musl-dev libffi-dev openssl-dev
