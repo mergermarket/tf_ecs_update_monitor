@@ -9,6 +9,7 @@ except ImportError:
 
 import sys
 
+from itertools import cycle
 from mock import Mock, patch, ANY
 from string import ascii_letters, digits
 from hypothesis import given, assume
@@ -244,4 +245,63 @@ class TestECSMonitorCLI(unittest.TestCase):
         assert logs.output == [(
             'ERROR:ecs_update_monitor.logger:Deployment failed - '
             '3 new tasks have failed'
+        )]
+
+    @patch('ecs_update_monitor.ECSMonitor')
+    @patch('ecs_update_monitor.ECSEventIterator')
+    @patch('ecs_update_monitor.cli.Session')
+    def test_run_timeout_error(self, mock_session, mock_iter, mock_monitor):
+        # Given
+        root_session = Mock()
+        assumed_session = Mock()
+
+        def SessionContructor(
+            aws_access_key_id=None, aws_secret_access_key=None,
+            aws_session_token=None, region_name=None
+        ):
+            if aws_access_key_id is not None:
+                return assumed_session
+            else:
+                return root_session
+
+        mock_session.side_effect = SessionContructor
+        mock_arn = 'arn:aws:sts::{}:assumed-role/{}/{}'.format(
+                '1234567890', 'role', 'session_name'
+        )
+        mock_sts = Mock()
+        mock_sts.get_caller_identity.return_value = {
+            'Arn': mock_arn
+        }
+        mock_sts.assume_role.return_value = {
+            'Credentials': {
+                'AccessKeyId': 'access_key',
+                'SecretAccessKey': 'secret_key',
+                'SessionToken': 'token',
+                'Expiration': datetime(2015, 1, 1),
+            }
+        }
+        root_session.client.return_value = mock_sts
+        mock_iter.return_value = Mock()
+
+        ecs_event_iterator = cycle([
+            InProgressEvent(0, 0, 2, 0, []),
+            InProgressEvent(0, 0, 2, 0, []),
+        ])
+        ecs_monitor = ECSMonitor(ecs_event_iterator)
+        ecs_monitor._INTERVAL = 0.1
+        ecs_monitor._TIMEOUT = 0.1
+        mock_monitor.return_value = ecs_monitor
+        # When
+        with unittest.TestCase.assertLogs(
+            self, 'ecs_update_monitor.logger', level='ERROR'
+        ) as logs:
+            cli.main([
+                '--cluster', 'dummy', '--service', 'dummy',
+                '--taskdef', 'dummy', '--region', 'region',
+                '--caller-arn', mock_arn
+            ])
+        # Then
+        assert logs.output == [(
+            'ERROR:ecs_update_monitor.logger:Deployment timed out - '
+            'didn\'t complete within 0.1 seconds'
         )]

@@ -1,8 +1,5 @@
 from time import sleep, time
 
-from ecs_update_monitor.logger import logger
-
-
 MAX_FAILURES = 3
 
 
@@ -32,11 +29,8 @@ class ECSMonitor:
     def _check_ecs_deploy_progress(self):
         start = time()
         for event in self._ecs_event_iterator:
-            self._show_deployment_progress(event)
             self._check_for_failed_tasks(event)
-
             if event.done:
-                logger.info('Deployment complete')
                 return True
             if time() - start > self._TIMEOUT:
                 raise TimeoutError(
@@ -44,18 +38,6 @@ class ECSMonitor:
                     'within {} seconds'.format(self._TIMEOUT)
                 )
             sleep(self._INTERVAL)
-
-    def _show_deployment_progress(self, event):
-        for message in event.messages:
-            logger.info('ECS service event - {}'.format(message))
-
-        logger.info(
-            'ECS service tasks - '
-            'desired: {} pending: {} running: {} previous: {}'.format(
-                event.desired, event.pending,
-                event.running, event.previous_running
-            )
-        )
 
     def _check_for_failed_tasks(self, event):
         if event.running < self._previous_running_count:

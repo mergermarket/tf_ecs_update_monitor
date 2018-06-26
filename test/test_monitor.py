@@ -4,9 +4,8 @@ from itertools import cycle, islice
 
 from boto3 import Session
 from ecs_update_monitor import (
-    DoneEvent, ECSEventIterator, ECSMonitor, FailedTasksError,
-    TaskdefDoesNotMatchError, InProgressEvent, TimeoutError,
-    run
+    ECSEventIterator, ECSMonitor, TaskdefDoesNotMatchError,
+    InProgressEvent, TimeoutError, run
 )
 from dateutil.tz import tzlocal
 from string import ascii_letters, digits
@@ -27,53 +26,6 @@ class TestECSMonitor(unittest.TestCase):
         else:
             return AssertLogsContext(self, logger, level)
 
-    def test_ecs_monitor_successful_deployment(self):
-        # Given
-        ecs_event_iterator = [
-            DoneEvent(2, 0, 2, 0, [])
-        ]
-        ecs_monitor = ECSMonitor(ecs_event_iterator)
-
-        # When
-        with self.assertLogs(
-            'ecs_update_monitor.logger', level='INFO'
-        ) as logs:
-            ecs_monitor.wait()
-
-        # Then
-        assert logs.output == [
-            ('INFO:ecs_update_monitor.logger:ECS service tasks - desired: 2 '
-             'pending: 0 running: 2 previous: 0'),
-            'INFO:ecs_update_monitor.logger:Deployment complete'
-        ]
-
-    def test_ecs_monitor_eventual_successful_deployment(self):
-        # Given
-        ecs_event_iterator = [
-            InProgressEvent(0, 1, 2, 2, []),
-            InProgressEvent(1, 0, 2, 1, []),
-            DoneEvent(2, 0, 2, 0, [])
-        ]
-        ecs_monitor = ECSMonitor(ecs_event_iterator)
-        ecs_monitor._INTERVAL = 0
-
-        # When
-        with self.assertLogs(
-            'ecs_update_monitor.logger', level='INFO'
-        ) as logs:
-            ecs_monitor.wait()
-
-        # Then
-        assert logs.output == [
-            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
-             'desired: 2 pending: 1 running: 0 previous: 2'),
-            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
-             'desired: 2 pending: 0 running: 1 previous: 1'),
-            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
-             'desired: 2 pending: 0 running: 2 previous: 0'),
-            'INFO:ecs_update_monitor.logger:Deployment complete'
-        ]
-
     def test_ecs_monitor_deployment_times_out(self):
         # Given
         ecs_event_iterator = cycle([
@@ -86,54 +38,6 @@ class TestECSMonitor(unittest.TestCase):
 
         # Then
         self.assertRaises(TimeoutError, ecs_monitor.wait)
-
-    def test_ecs_monitor_failed_tasks_error(self):
-        # Given
-        ecs_event_iterator = [
-            # running, pending, desired, previous
-            InProgressEvent(0, 1, 2, 2, []),
-            InProgressEvent(1, 1, 2, 2, []),
-            InProgressEvent(2, 0, 2, 2, []),
-            InProgressEvent(1, 0, 2, 2, []),
-            InProgressEvent(1, 1, 2, 2, []),
-            InProgressEvent(2, 0, 2, 2, []),
-            InProgressEvent(1, 0, 2, 2, []),
-            InProgressEvent(1, 1, 2, 2, []),
-            InProgressEvent(2, 0, 2, 2, []),
-            InProgressEvent(1, 0, 2, 2, []),
-        ]
-        ecs_monitor = ECSMonitor(ecs_event_iterator)
-        ecs_monitor._INTERVAL = 0
-
-        # When
-        with self.assertLogs(
-            'ecs_update_monitor.logger', level='INFO'
-        ) as logs:
-            self.assertRaises(FailedTasksError, ecs_monitor.wait)
-
-        # Then
-        assert logs.output == [
-            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
-             'desired: 2 pending: 1 running: 0 previous: 2'),
-            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
-             'desired: 2 pending: 1 running: 1 previous: 2'),
-            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
-             'desired: 2 pending: 0 running: 2 previous: 2'),
-            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
-             'desired: 2 pending: 0 running: 1 previous: 2'),
-            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
-             'desired: 2 pending: 1 running: 1 previous: 2'),
-            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
-             'desired: 2 pending: 0 running: 2 previous: 2'),
-            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
-             'desired: 2 pending: 0 running: 1 previous: 2'),
-            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
-             'desired: 2 pending: 1 running: 1 previous: 2'),
-            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
-             'desired: 2 pending: 0 running: 2 previous: 2'),
-            ('INFO:ecs_update_monitor.logger:ECS service tasks - '
-             'desired: 2 pending: 0 running: 1 previous: 2'),
-        ]
 
 
 class TestECSEventIterator(unittest.TestCase):
