@@ -15,7 +15,7 @@ docker run \
     $(tty -s && echo -v $(pwd)/.hypothesis/:/usr/src/app/.hypothesis/) \
     $image py.test \
         -n auto \
-        --cov=./ecs_update_monitor \
+        --cov=. \
         --cov-report term-missing \
         --tb=short \
         "$@"
