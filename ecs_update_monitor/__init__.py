@@ -1,5 +1,5 @@
 from time import sleep, time
-from ecs_update_monitor import logger
+from ecs_update_monitor.logger import logger
 
 MAX_FAILURES = 3
 
