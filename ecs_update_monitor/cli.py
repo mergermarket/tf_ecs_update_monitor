@@ -3,7 +3,7 @@ from re import match
 
 from boto3 import Session
 
-from ecs_update_monitor import run, FailedTasksError
+from ecs_update_monitor import run, UserFacingError
 from ecs_update_monitor.logger import logger
 
 
@@ -54,5 +54,5 @@ def main(argv):
         session = switch_role(sts, args.caller_arn, args.region)
     try:
         run(args.cluster, args.service, args.taskdef, session)
-    except FailedTasksError as e:
+    except UserFacingError as e:
         logger.error(str(e))
