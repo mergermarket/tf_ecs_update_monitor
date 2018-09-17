@@ -235,17 +235,19 @@ class TestECSMonitorCLI(unittest.TestCase):
         # When
         with unittest.TestCase.assertLogs(
             self, 'ecs_update_monitor.logger', level='ERROR'
-        ) as logs:
+        ) as logs, self.assertRaises(SystemExit) as exit:
             cli.main([
                 '--cluster', 'dummy', '--service', 'dummy',
                 '--taskdef', 'dummy', '--region', 'region',
                 '--caller-arn', mock_arn
             ])
+
         # Then
         assert logs.output == [(
             'ERROR:ecs_update_monitor.logger:Deployment failed - '
             '3 new tasks have failed'
         )]
+        assert exit.exception.code != 0
 
     @patch('ecs_update_monitor.ECSMonitor')
     @patch('ecs_update_monitor.ECSEventIterator')
@@ -294,14 +296,16 @@ class TestECSMonitorCLI(unittest.TestCase):
         # When
         with unittest.TestCase.assertLogs(
             self, 'ecs_update_monitor.logger', level='ERROR'
-        ) as logs:
+        ) as logs, self.assertRaises(SystemExit) as exit:
             cli.main([
                 '--cluster', 'dummy', '--service', 'dummy',
                 '--taskdef', 'dummy', '--region', 'region',
                 '--caller-arn', mock_arn
             ])
+
         # Then
         assert logs.output == [(
             'ERROR:ecs_update_monitor.logger:Deployment timed out - '
             'didn\'t complete within 0.1 seconds'
         )]
+        assert exit.exception.code != 0
