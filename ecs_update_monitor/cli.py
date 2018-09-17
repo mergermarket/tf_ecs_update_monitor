@@ -1,4 +1,5 @@
 import argparse
+import sys
 from re import match
 
 from boto3 import Session
@@ -56,3 +57,4 @@ def main(argv):
         run(args.cluster, args.service, args.taskdef, session)
     except UserFacingError as e:
         logger.error(str(e))
+        sys.exit(1)
