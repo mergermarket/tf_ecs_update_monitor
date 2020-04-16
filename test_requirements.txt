@@ -1,7 +1,7 @@
 pytest==3.7.4
 pytest-cov==2.5.1
 pytest-xdist==1.23.0
-pytest-randomly==1.2.3
+pytest-randomly==3.3.1
 mock==2.0.0
 flake8==3.5.0
 mccabe==0.6.1
