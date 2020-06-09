@@ -3,6 +3,6 @@ pytest-cov==2.5.1
 pytest-xdist==1.23.0
 pytest-randomly==1.2.3
 mock==2.0.0
-flake8==3.5.0
+flake8==3.8.3
 mccabe==0.6.1
 hypothesis==3.69.12
