@@ -1,6 +1,6 @@
 # ECS update monitor terraform module
 
-[![Build Status](https://travis-ci.org/mergermarket/tf_ecs_update_monitor.svg?branch=master)](https://travis-ci.org/mergermarket/tf_ecs_update_monitor)
+[![Build Status](https://travis-ci.com/mergermarket/tf_ecs_update_monitor.svg?branch=master)](https://travis-ci.com/mergermarket/tf_ecs_update_monitor)
 
 This module can be used to wait for an update to an ECS service to apply.
 
