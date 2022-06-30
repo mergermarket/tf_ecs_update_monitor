@@ -111,11 +111,7 @@ class ECSEventIterator:
         )
 
     def _check_taskdef(self, primary_deployment):
-        sleep(15)
-        if primary_deployment['taskDefinition'] != self._taskdef:
-            raise TaskdefDoesNotMatchError(
-                self._taskdef, primary_deployment['taskDefinition']
-            )
+        pass
 
     def _deploy_in_progress(self, running, desired, previous_running):
         if running != desired or previous_running:
