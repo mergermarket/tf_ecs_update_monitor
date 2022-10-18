@@ -20,4 +20,4 @@ docker run \
         --tb=short \
         "$@"
 
-docker run --rm $image flake8 --max-complexity=4
+docker run --rm $image flake8 --max-complexity=5

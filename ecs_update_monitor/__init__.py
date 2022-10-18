@@ -1,5 +1,7 @@
 from time import sleep, time
 from ecs_update_monitor.logger import logger
+import datetime
+
 
 MAX_FAILURES = 3
 
@@ -10,7 +12,7 @@ class UserFacingError(Exception):
 
 def run(cluster, service, taskdef, boto_session):
     event_iterator = ECSEventIterator(cluster, service, taskdef, boto_session)
-    monitor = ECSMonitor(event_iterator)
+    monitor = ECSMonitor(event_iterator, cluster, boto_session)
     monitor.wait()
 
 
@@ -19,10 +21,12 @@ class ECSMonitor:
     _TIMEOUT = 600
     _INTERVAL = 15
 
-    def __init__(self, ecs_event_iterator):
+    def __init__(self, ecs_event_iterator, cluster, boto_session):
         self._ecs_event_iterator = ecs_event_iterator
         self._previous_running_count = 0
         self._failed_count = 0
+        self._cluster = cluster
+        self._boto_session = boto_session
 
     def wait(self):
         self._check_ecs_deploy_progress()
@@ -34,6 +38,8 @@ class ECSMonitor:
             self._check_for_failed_tasks(event)
             if event.done:
                 return True
+            if event.new_instance:
+                self._trigger_new_instance_alarm()
             if time() - start > self._TIMEOUT:
                 raise TimeoutError(
                     'Deployment timed out - didn\'t complete '
@@ -51,6 +57,28 @@ class ECSMonitor:
             if self._failed_count >= MAX_FAILURES:
                 raise FailedTasksError
         self._previous_running_count = event.running
+
+    def _trigger_new_instance_alarm(self):
+        logger.info("IN NEW INSTANCE TRIGGER CODE")
+        response = self._boto_session.client('cloudwatch').put_metric_data(
+            Namespace='Platform/ECS',
+            MetricData=[self._build_metric_data(self._cluster)]
+        )
+        logger.info(response)
+
+    def _build_metric_data(self, cluster_name):
+        return {
+            'MetricName': "resource-reservation-no-avail-instance-breached",
+            'Dimensions': [
+                {
+                    'Name': 'EcsCluster',
+                    'Value': cluster_name,
+                }
+            ],
+            'Timestamp': datetime.datetime.utcnow(),
+            'Value': 1,
+            'Unit': 'Count'
+        }
 
 
 class ECSEventIterator:
@@ -100,6 +128,11 @@ class ECSEventIterator:
         if self._new_service_deployment is None:
             self._new_service_deployment = previous_running == 0
 
+        if self._need_new_instance(messages):
+            return NewInstanceEvent(
+                running, pending, desired, previous_running, messages
+            )
+
         if self._deploy_in_progress(running, desired, previous_running):
             return InProgressEvent(
                 running, pending, desired, previous_running, messages
@@ -115,6 +148,13 @@ class ECSEventIterator:
             raise TaskdefDoesNotMatchError(
                 self._taskdef, primary_deployment['taskDefinition']
             )
+
+    def _need_new_instance(self, messages):
+        for msg in messages:
+            if "unable to place a task because no " \
+               "container instance met all of its requirements" in msg:
+                return True
+        return False
 
     def _deploy_in_progress(self, running, desired, previous_running):
         if running != desired or previous_running:
@@ -186,17 +226,36 @@ class Event:
         self.messages = messages
 
 
+class NewInstanceEvent(Event):
+
+    @property
+    def done(self):
+        return False
+
+    @property
+    def new_instance(self):
+        return True
+
+
 class DoneEvent(Event):
 
     @property
     def done(self):
         return True
 
+    @property
+    def new_instance(self):
+        return False
+
 
 class InProgressEvent(Event):
 
     @property
     def done(self):
+        return False
+
+    @property
+    def new_instance(self):
         return False
 
 

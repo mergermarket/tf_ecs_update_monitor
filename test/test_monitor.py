@@ -32,7 +32,9 @@ class TestECSMonitor(unittest.TestCase):
             InProgressEvent(0, 0, 2, 0, []),
             InProgressEvent(0, 0, 2, 0, []),
         ])
-        ecs_monitor = ECSMonitor(ecs_event_iterator)
+
+        boto_session = Mock()
+        ecs_monitor = ECSMonitor(ecs_event_iterator, 'dummy', boto_session)
         ecs_monitor._INTERVAL = 0.1
         ecs_monitor._TIMEOUT = 0.1
 
@@ -574,5 +576,9 @@ class TestRunECSMonitor(unittest.TestCase):
             ECSEventIterator.assert_called_once_with(
                 cluster, service, taskdef, boto_session
             )
-            ECSMonitor.assert_called_once_with(event_iterator)
+            ECSMonitor.assert_called_once_with(
+                event_iterator,
+                cluster,
+                boto_session
+            )
             ecs_monitor.wait.assert_called_once()

@@ -229,7 +229,7 @@ class TestECSMonitorCLI(unittest.TestCase):
             InProgressEvent(2, 0, 2, 2, []),
             InProgressEvent(1, 0, 2, 2, []),
         ]
-        ecs_monitor = ECSMonitor(ecs_event_iterator)
+        ecs_monitor = ECSMonitor(ecs_event_iterator, 'dummy', mock_session)
         ecs_monitor._INTERVAL = 0
         mock_monitor.return_value = ecs_monitor
         # When
@@ -289,7 +289,7 @@ class TestECSMonitorCLI(unittest.TestCase):
             InProgressEvent(0, 0, 2, 0, []),
             InProgressEvent(0, 0, 2, 0, []),
         ])
-        ecs_monitor = ECSMonitor(ecs_event_iterator)
+        ecs_monitor = ECSMonitor(ecs_event_iterator, 'dummy', mock_session)
         ecs_monitor._INTERVAL = 0.1
         ecs_monitor._TIMEOUT = 0.1
         mock_monitor.return_value = ecs_monitor
