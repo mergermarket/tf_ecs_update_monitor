@@ -5,4 +5,4 @@ pytest-randomly==3.10.1
 mock==2.0.0
 flake8==4.0.1
 mccabe==0.6.1
-hypothesis==6.24.2
+hypothesis==6.65.1
